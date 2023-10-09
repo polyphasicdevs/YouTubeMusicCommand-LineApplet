@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 import subprocess
+import random
 from ytmusicapi import YTMusic
 
-def play_songs_with_mpv(urls, titles=None):
+def play_songs_with_mpv(urls, titles):
     """Play multiple songs using mpv with MPRIS support and customized output."""
-    if titles is None:
-        titles = ["Unknown Title"] * len(urls)
-        
     for url, title in zip(urls, titles):
         print(f"\033[92mNow Playing: {title}\033[0m")  # Display title in green color
         args = [
@@ -18,8 +16,6 @@ def play_songs_with_mpv(urls, titles=None):
             url
         ]
         subprocess.run(args)
-
-
 
 def main():
     # Initialize YTMusic with your authentication file
@@ -58,6 +54,13 @@ def main():
                 
                 video_urls.append(video_url)
                 titles.append(display_title)
+    
+    # Ask the user if they want to shuffle the songs
+    shuffle_choice = input("Press 's' to shuffle or any other key to continue: ")
+    if shuffle_choice.lower() == 's':
+        combined = list(zip(video_urls, titles))
+        random.shuffle(combined)
+        video_urls, titles = zip(*combined)
     
     if video_urls:
         play_songs_with_mpv(video_urls, titles)
