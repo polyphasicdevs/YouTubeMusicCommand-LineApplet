@@ -2,17 +2,24 @@
 import subprocess
 from ytmusicapi import YTMusic
 
-def play_songs_with_mpv(urls, titles):
+def play_songs_with_mpv(urls, titles=None):
     """Play multiple songs using mpv with MPRIS support and customized output."""
-    args = [
-        "mpv",
-        "--no-video",
-        "--no-resume-playback",
-        "--msg-level=cplayer=error",
-        "--msg-level=ao=error",
-        "--osd-msg1=${media-title}"
-    ] + urls
-    subprocess.run(args)
+    if titles is None:
+        titles = ["Unknown Title"] * len(urls)
+        
+    for url, title in zip(urls, titles):
+        print(f"\033[92mNow Playing: {title}\033[0m")  # Display title in green color
+        args = [
+            "mpv",
+            "--no-video",
+            "--no-resume-playback",
+            "--msg-level=cplayer=error",
+            "--msg-level=ao=error",
+            url
+        ]
+        subprocess.run(args)
+
+
 
 def main():
     # Initialize YTMusic with your authentication file
