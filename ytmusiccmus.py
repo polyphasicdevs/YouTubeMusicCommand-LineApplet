@@ -21,10 +21,10 @@ def main():
     # Fetch user's saved playlists
     playlists = yt.get_library_playlists(limit=10)
     
-    # Display the top 10 playlists to the user in two rows of 5
+    # Display the top 10 playlists to the user in two columns of 5
     print("Your top 10 playlists:")
-    for idx in range(0, 10, 5):
-        print(' '.join([f"{i+1}. {playlists[i]['title']}" for i in range(idx, idx+5)]))
+    for i in range(5):
+        print(f"{i+1}. {playlists[i]['title']} \t {i+6}. {playlists[i+5]['title'] if i+5 < len(playlists) else ''}")
     
     # Ask the user to select a playlist or search for a song/artist
     choice = input("\nEnter playlist number (1-10) or song/artist name: ")
