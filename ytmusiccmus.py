@@ -2,70 +2,67 @@
 import subprocess
 from ytmusicapi import YTMusic
 
-def play_songs_with_mpv(urls, titles):
+def play_songs_with_mpv(urls, titles=None):
     """Play multiple songs using mpv with MPRIS support and customized output."""
-    args = [
-        "mpv",
-        "--no-video",
-        "--no-resume-playback",  # Suppress the "Resuming playback" message
-        "--msg-level=cplayer=error",  # Suppress cplayer messages below error level
-        "--msg-level=ao=fatal",  # Suppress audio output messages below fatal level
-    ]
-    
-    # Add each URL and its corresponding title
+    if titles is None:
+        titles = ["Unknown Title"] * len(urls)
+        
     for url, title in zip(urls, titles):
-        args.extend([f"--force-media-title={title}", url])
-    
-    # Run mpv and capture the output
-    process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    
-    # Iterate through each line of the output
-    for line in process.stdout:
-        # Only print lines containing "Playing:" or the title
-        if "Playing:" in line:
-            # Extract the video ID from the URL
-            video_id = line.split("https://www.youtube.com/watch?v=")[-1].strip()
-            # Find the corresponding title for the video ID
-            for url, title in zip(urls, titles):
-                if video_id in url:
-                    print("\033[92mPlaying:", title, "\033[0m")  # Green color
-                    break
-        elif any(title in line for title in titles):
-            print(line.strip())
+        print(f"\033[92mNow Playing: {title}\033[0m")  # Display title in green color
+        args = [
+            "mpv",
+            "--no-video",
+            "--no-resume-playback",
+            "--msg-level=cplayer=error",
+            "--msg-level=ao=error",
+            url
+        ]
+        subprocess.run(args)
 
-    process.communicate()
 
 
 def main():
     # Initialize YTMusic with your authentication file
     yt = YTMusic('oauth.json')
     
-    # Search for a song or artist
-    query = input("Enter song or artist name: ")
-    search_results = yt.search(query)
+    # Fetch user's saved playlists
+    playlists = yt.get_library_playlists(limit=10)
     
-    # Check if there are any results
-    if not search_results:
-        print("No results found!")
-        return
+    # Display the top 10 playlists to the user in two columns of 5
+    print("Your top 10 playlists:")
+    for i in range(5):
+        print(f"{i+1}. {playlists[i]['title']} \t {i+6}. {playlists[i+5]['title'] if i+5 < len(playlists) else ''}")
     
-    # Extract video URLs and titles for the first few results with a 'videoId' key
-    video_urls = []
-    titles = []
-    for result in search_results:
-        if 'videoId' in result:
-            video_url = f"https://www.youtube.com/watch?v={result['videoId']}"
-            title = result.get('title', 'Unknown Title')
-            artist = result.get('artists', [{'name': 'Unknown Artist'}])[0]['name']
-            display_title = f"{title} - {artist}"
-            
-            video_urls.append(video_url)
-            titles.append(display_title)
+    # Ask the user to select a playlist or search for a song/artist
+    choice = input("\nEnter playlist number (1-10) or song/artist name: ")
+    
+    if choice.isdigit() and 1 <= int(choice) <= 10:
+        # User selected a playlist
+        playlist_id = playlists[int(choice) - 1]['playlistId']
+        tracks = yt.get_playlist(playlist_id, limit=100)['tracks']
+        video_urls = [f"https://www.youtube.com/watch?v={track['videoId']}" for track in tracks]
+        titles = [f"{track['title']} - {track['artists'][0]['name']}" for track in tracks]
+    else:
+        # User searched for a song/artist
+        search_results = yt.search(choice)
+        
+        # Extract video URLs and titles for the first few results with a 'videoId' key
+        video_urls = []
+        titles = []
+        for result in search_results:
+            if 'videoId' in result:
+                video_url = f"https://www.youtube.com/watch?v={result['videoId']}"
+                title = result.get('title', 'Unknown Title')
+                artist = result.get('artists', [{'name': 'Unknown Artist'}])[0]['name']
+                display_title = f"{title} - {artist}"
+                
+                video_urls.append(video_url)
+                titles.append(display_title)
     
     if video_urls:
         play_songs_with_mpv(video_urls, titles)
     else:
-        print("No videos found in the search results.")
+        print("No videos found in the search results or playlist.")
 
 if __name__ == "__main__":
     main()
