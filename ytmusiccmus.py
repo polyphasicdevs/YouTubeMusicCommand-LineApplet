@@ -43,7 +43,7 @@ def main():
     # Ask the user to select a playlist or search for a song/artist
     choice = input("\nEnter playlist number (1-10) or song/artist name: ")
     
-    if choice.isdigit() and 1 <= int(choice) <= 10:
+    if choice.isdigit() and 1 <= int(choice) <= 20:
         # User selected a playlist
         playlist_id = playlists[int(choice) - 1]['playlistId']
         tracks = yt.get_playlist(playlist_id, limit=100)['tracks']
